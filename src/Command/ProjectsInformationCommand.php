@@ -60,12 +60,9 @@ class ProjectsInformationCommand extends Command
             if (!$result) {
                 $buildResult = ' - ';
             } else {
-                $buildResult = ($result['last_build_result'] === 0 ? '❎' : '❌')
+                $buildResult = ($result['last_build_result'] === 0 ? '✅' : '❌')
                     . '   https://travis-ci.org/' . $project->getGitHubRepositoryName();
             }
-
-            var_dump($project->getGitHubRepositoryName());
-
 
             $rows[] = [
                 $project->getName(),
