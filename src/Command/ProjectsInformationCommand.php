@@ -2,15 +2,11 @@
 namespace lstrojny\Maintenance\Command;
 
 use function Functional\const_function;
-use function Functional\first;
-use function Functional\partial_any;
-use function Functional\pluck;
 use GuzzleHttp\Client;
-use GuzzleHttp\Promise\EachPromise;
 use function GuzzleHttp\Promise\unwrap;
 use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\UriTemplate;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
+use lstrojny\Maintenance\Value\StatusEmojis;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -30,7 +26,8 @@ class ProjectsInformationCommand extends Command
     {
         $this
             ->setName('projects:info')
-            ->setDescription('Show projects information');
+            ->setDescription('Show projects information')
+            ->addOption('quick');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output) : int
@@ -51,7 +48,11 @@ class ProjectsInformationCommand extends Command
         /** @var Response[] $response */
         $responses = unwrap($requests);
 
+        $io->progressStart(count($this->projectsRepository->matching(const_function(true))));
+
         foreach ($this->projectsRepository->matching(const_function(true)) as $project) {
+
+            $io->progressAdvance();
 
             $response = $responses[$project->getName()];
 
@@ -60,20 +61,40 @@ class ProjectsInformationCommand extends Command
             if (!$result) {
                 $buildResult = ' - ';
             } else {
-                $buildResult = ($result['last_build_result'] === 0 ? '✅' : '❌')
-                    . '   https://travis-ci.org/' . $project->getGitHubRepositoryName();
+
+                if ($result['last_build_result'] === 0) {
+                    $status = StatusEmojis::POSITIVE;
+                } elseif ($result['last_build_result'] === null) {
+                    $status = StatusEmojis::PROGRESS;
+                } else {
+                    $status = StatusEmojis::NEGATIVE;
+                }
+
+                $buildResult = $status . '   https://travis-ci.org/' . $project->getGitHubRepositoryName();
+            }
+
+            if ($project->needsRelease()) {
+                $releaseStatus = StatusEmojis::NEGATIVE;
+            } elseif ($input->getOption('quick') || $project->latestReleasePublished()) {
+                $releaseStatus = StatusEmojis::POSITIVE;
+            } else {
+                $releaseStatus = StatusEmojis::PROGRESS;
             }
 
             $rows[] = [
                 $project->getName(),
+                $releaseStatus . '   ' . $project->getLatestVersion(),
+                ($project->hasLocalChanges() ? StatusEmojis::PROGRESS : StatusEmojis::POSITIVE),
                 $project->usesComposer() ? $project->composer()->require->php : 'n.A.',
                 implode(' ', $project->travis()->php->get()),
                 $buildResult
             ];
         }
 
+        $io->progressFinish();
+
         $io->table(
-            ['Project', 'Composer PHP version', 'Travis build PHP versions', 'Build status'],
+            ['Project', 'Latest version', "Pend. changes", 'PHP', 'Travis PHP versions', 'Build status'],
             $rows
         );
 

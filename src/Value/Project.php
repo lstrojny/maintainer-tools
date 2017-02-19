@@ -1,9 +1,14 @@
 <?php
 namespace lstrojny\Maintenance\Value;
 
-use function file_get_contents;
 use function Functional\first;
+use function Functional\pluck;
 use function Functional\partial_any;
+use InvalidArgumentException;
+use Naneau\SemVer\Parser;
+use Naneau\SemVer\Sort;
+use Naneau\SemVer\Version;
+use RuntimeException;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Yaml\Yaml;
 use const Functional\…;
@@ -70,12 +75,104 @@ class Project
                         partial_any('preg_split', '/\s+/', …),
                         array_filter(explode("\n", $this->git('remote', '-v')))
                     ),
-                    function (array $vs) {
+                    function (array $vs)
+                    {
                         return $vs[0] === 'origin';
                     }
                 )[1]
             )[1]
         );
+    }
+
+    public function needsRelease() : bool
+    {
+        return !empty($this->git('diff', $this->getLatestVersion()->getOriginalVersion()));
+    }
+
+    public function getLatestVersion() : Version
+    {
+        return first(array_reverse($this->getVersions()));
+    }
+
+    public function getLatestRemoteVersion() : Version
+    {
+        return array_reverse($this->getRemoteVersions())[0];
+    }
+
+    public function latestReleasePublished() : bool
+    {
+        return $this->getLatestVersion()->getOriginalVersion()
+            === $this->getLatestRemoteVersion()->getOriginalVersion();
+    }
+
+    public function hasLocalChanges() : bool
+    {
+        return !empty($this->git('diff')) || !empty($this->git('diff', 'HEAD'));
+    }
+
+    /** @return Version[] */
+    public function getVersions()
+    {
+        return Sort::sortArray(array_map([__CLASS__, 'parseVersion'], array_filter(explode("\n", $this->git('tag')))));
+    }
+
+    /** @return Version[] */
+    public function getRemoteVersions()
+    {
+        $versions = pluck(
+            array_map(
+                partial_any('explode', '/', …),
+                        array_filter(
+                            pluck(
+                                array_map(
+                                    partial_any('preg_split', '/\s+/', …),
+                                    array_filter(explode("\n", $this->git('ls-remote', 'origin', 'refs/tags/*')))
+                                ),
+                                1
+                            ),
+                            function ($version) {
+                                return $version[-1] !== '}';
+                            }
+                        )
+                    ),
+                    2
+                );
+
+        return Sort::sortArray(array_map([__CLASS__, 'parseVersion'], $versions));
+    }
+
+    public static function parseVersion($version) : Version
+    {
+        $fixedVersion = preg_replace('/^v/', '', $version);
+
+        try {
+            $parsed = Parser::parse($fixedVersion);
+            $parsed->setOriginalVersion($version);
+
+            return $parsed;
+        } catch (InvalidArgumentException $e) {
+
+            switch (substr_count($fixedVersion, '.')) {
+                case 1: // 0.1
+                    $fixedVersion .= '.0';
+                    break;
+
+                case 3: // 0.2.0.0
+                    if ($fixedVersion[-2] !== '.') {
+                        throw new RuntimeException(sprintf('Invalid version: "%s"', $version));
+                    }
+                    $fixedVersion = substr($fixedVersion, 0, -2);
+                    break;
+
+                default:
+                    throw new RuntimeException(sprintf('Unhandled version: "%s"', $version));
+            }
+
+            $parsed = Parser::parse($fixedVersion);
+            $parsed->setOriginalVersion($version);
+
+            return $parsed;
+        }
     }
 
     public function compare(self $other) : int

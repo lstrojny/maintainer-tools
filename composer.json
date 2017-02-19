@@ -8,7 +8,8 @@
         "lstrojny/functional-php": "^1.4",
         "symfony/yaml": "^3.2",
         "symfony/process": "^3.2",
-        "guzzlehttp/guzzle": "^6.2"
+        "guzzlehttp/guzzle": "^6.2",
+        "naneau/semver": "^0.0.7"
     },
     "license": "MIT",
     "authors": [
