@@ -1,0 +1,23 @@
+{
+    "name": "lstrojny/maintainer-tools",
+    "description": "A collection of tools to aid maintain a bigger number of PHP projects",
+    "type": "project",
+    "require": {
+        "symfony/console": "^3.2",
+        "symfony/filesystem": "^3.2",
+        "lstrojny/functional-php": "^1.4",
+        "symfony/yaml": "^3.2",
+        "symfony/process": "^3.2",
+        "guzzlehttp/guzzle": "^6.2"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lars Strojny",
+            "email": "lars@strojny.net"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"lstrojny\\Maintenance\\": "src/"}
+    }
+}

@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use lstrojny\Maintenance\Command\AddProjectCommand;
+use lstrojny\Maintenance\Command\GitStatusCommand;
+use lstrojny\Maintenance\Command\RunComposerCommand;
+use lstrojny\Maintenance\Command\RunTestsCommand;
+use lstrojny\Maintenance\Command\ShowComposerVersionsCommand;
+use lstrojny\Maintenance\Command\ProjectsInformationCommand;
+use lstrojny\Maintenance\Repository\ProjectsRepository;
+use lstrojny\Maintenance\Value\Path;
+use Symfony\Component\Console\Application;
+
+$projectsRepository = new ProjectsRepository(__DIR__ . '/../projects.json');
+
+$application = new Application();
+$application->add(new ProjectsInformationCommand($projectsRepository));
+$application->add(new AddProjectCommand($projectsRepository));
+$application->add(new RunTestsCommand($projectsRepository));
+$application->add(new RunComposerCommand($projectsRepository));
+$application->add(new ShowComposerVersionsCommand($projectsRepository));
+$application->add(new GitStatusCommand($projectsRepository));
+
+$application->run();
