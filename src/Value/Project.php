@@ -13,6 +13,7 @@ use function Functional\compare_on;
 use function Functional\first;
 use function Functional\partial_any;
 use function Functional\pluck;
+use function Functional\sort;
 
 class Project
 {
@@ -134,21 +135,21 @@ class Project
         $versions = pluck(
             array_map(
                 partial_any('explode', '/', …),
-                        array_filter(
-                            pluck(
-                                array_map(
-                                    partial_any('preg_split', '/\s+/', …),
-                                    array_filter(explode("\n", $this->git('ls-remote', 'origin', 'refs/tags/*')))
-                                ),
-                                1
-                            ),
-                            function ($version) {
-                                return $version[-1] !== '}';
-                            }
-                        )
+                array_filter(
+                    pluck(
+                        array_map(
+                            partial_any('preg_split', '/\s+/', …),
+                            array_filter(explode("\n", $this->git('ls-remote', 'origin', 'refs/tags/*')))
+                        ),
+                        1
                     ),
-                    2
-                );
+                    function ($version) {
+                        return $version[-1] !== '}';
+                    }
+                )
+            ),
+            2
+        );
 
         return Sort::sortArray(array_map([__CLASS__, 'parseVersion'], $versions));
     }
