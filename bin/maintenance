@@ -7,15 +7,16 @@ use lstrojny\Maintenance\Command\AddProjectCommand;
 use lstrojny\Maintenance\Command\GitCheckoutCommand;
 use lstrojny\Maintenance\Command\GitStatusCommand;
 use lstrojny\Maintenance\Command\ListReleasesCommand;
+use lstrojny\Maintenance\Command\ProjectsInformationCommand;
 use lstrojny\Maintenance\Command\RunComposerCommand;
 use lstrojny\Maintenance\Command\RunTestsCommand;
 use lstrojny\Maintenance\Command\ShowComposerVersionsCommand;
-use lstrojny\Maintenance\Command\ProjectsInformationCommand;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
-use lstrojny\Maintenance\Value\Path;
 use Symfony\Component\Console\Application;
 
-$projectsRepository = new ProjectsRepository(__DIR__ . '/../projects.json');
+$file = getenv('MAINTENANCE_PROJECT_FILE') ?: __DIR__ . '/../projects.json';
+
+$projectsRepository = new ProjectsRepository($file);
 
 $application = new Application();
 $application->add(new AddProjectCommand($projectsRepository));
