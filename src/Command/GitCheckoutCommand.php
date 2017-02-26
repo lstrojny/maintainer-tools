@@ -1,9 +1,6 @@
 <?php
 namespace lstrojny\Maintenance\Command;
 
-use function array_unique;
-use function Functional\const_function;
-use function Functional\map;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -14,6 +11,8 @@ use Symfony\Component\Process\ProcessBuilder;
 
 class GitCheckoutCommand extends Command
 {
+    use FilterableProjectsCommandTrait;
+
     private $projectsRepository;
 
     public function __construct(ProjectsRepository $projectsRepository)
@@ -22,21 +21,23 @@ class GitCheckoutCommand extends Command
         $this->projectsRepository = $projectsRepository;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this
             ->setName('git:checkout')
             ->setDescription('Run git checkout')
             ->addArgument('branch', InputArgument::REQUIRED);
+
+        $this->configureFilterOptions();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
         $branch = $input->getArgument('branch');
 
-        foreach ($this->projectsRepository->matching(const_function(true)) as $project) {
+        foreach ($this->projectsRepository->matching(self::createProjectMatcher($input)) as $project) {
             $io->title(sprintf('Running git checkout %s in %s', $branch, $project->getName()));
 
             $process = ProcessBuilder::create(['git', 'checkout', $branch])

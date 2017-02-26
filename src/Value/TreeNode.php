@@ -12,12 +12,12 @@ class TreeNode
         $this->data = $data;
     }
 
-    public function __isset($property) : bool
+    public function __isset($property): bool
     {
         return $this->data[$property];
     }
 
-    public function __get($property) : TreeNode
+    public function __get($property): TreeNode
     {
         return new TreeNode($this->data[$property] ?? null);
     }
@@ -27,7 +27,7 @@ class TreeNode
         return $this->data;
     }
 
-    public function __toString() : string
+    public function __toString(): string
     {
         return is_scalar($this->data) ? (string) $this->data : json_encode($this->data);
     }

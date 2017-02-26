@@ -4,6 +4,8 @@ namespace lstrojny\Maintenance\Value;
 use function Functional\first;
 use function Functional\pluck;
 use function Functional\partial_any;
+use function Functional\compare_on;
+use function Functional\sort;
 use InvalidArgumentException;
 use Naneau\SemVer\Parser;
 use Naneau\SemVer\Sort;
@@ -22,37 +24,48 @@ class Project
         $this->path = $path;
     }
 
-    public static function create(Path $path) : Project
+    public static function create(Path $path): Project
     {
         return new static($path);
     }
 
-    public function getName() : string
+    public function getName(): string
     {
         return $this->usesComposer() ? $this->composer()->name : basename($this->path);
     }
 
-    public function composer() : TreeNode
+    public function composer(): TreeNode
     {
         return new TreeNode(json_decode(file_get_contents($this->path->file('composer.json')), true));
     }
 
-    public function usesComposer() : bool
+    public function usesComposer(): bool
     {
         return $this->path->exists('composer.json');
     }
 
-    public function travis() : TreeNode
+    public function travis(): TreeNode
     {
         return new TreeNode(Yaml::parse(file_get_contents($this->path->file('.travis.yml'))));
     }
 
-    public function hasTests() : bool
+    /** @return string[] */
+    public function getTravisVersions(): array
+    {
+        return sort(
+            array_unique(
+                $this->travis()->php->get() ?? pluck($this->travis()->matrix->include->get() ?? [], 'php')
+            ),
+            compare_on('strcmp')
+        );
+    }
+
+    public function hasTests(): bool
     {
         return $this->path->exists('phpunit.xml.dist') && $this->path->exists('vendor/bin/phpunit');
     }
 
-    public function git(...$args) : string
+    public function git(...$args): string
     {
         $process = ProcessBuilder::create(array_merge(['git'], $args))
             ->setWorkingDirectory($this->path)
@@ -84,28 +97,28 @@ class Project
         );
     }
 
-    public function needsRelease() : bool
+    public function needsRelease(): bool
     {
         return !empty($this->git('diff', $this->getLatestVersion()->getOriginalVersion()));
     }
 
-    public function getLatestVersion() : Version
+    public function getLatestVersion(): Version
     {
         return first(array_reverse($this->getVersions()));
     }
 
-    public function getLatestRemoteVersion() : Version
+    public function getLatestRemoteVersion(): Version
     {
         return array_reverse($this->getRemoteVersions())[0];
     }
 
-    public function latestReleasePublished() : bool
+    public function latestReleasePublished(): bool
     {
         return $this->getLatestVersion()->getOriginalVersion()
             === $this->getLatestRemoteVersion()->getOriginalVersion();
     }
 
-    public function hasLocalChanges() : bool
+    public function hasLocalChanges(): bool
     {
         return !empty($this->git('diff')) || !empty($this->git('diff', 'HEAD'));
     }
@@ -141,9 +154,10 @@ class Project
         return Sort::sortArray(array_map([__CLASS__, 'parseVersion'], $versions));
     }
 
-    public static function parseVersion($version) : Version
+    public static function parseVersion($version): Version
     {
         $fixedVersion = preg_replace('/^v/', '', $version);
+        $fixedVersion = preg_replace('/(\d)(alpha|beta|gamma|rc)/', '$1-$2', $fixedVersion);
 
         try {
             $parsed = Parser::parse($fixedVersion);
@@ -175,12 +189,12 @@ class Project
         }
     }
 
-    public function compare(self $other) : int
+    public function compare(self $other): int
     {
         return $other->path->compare($this->path);
     }
 
-    public function getPath() : Path
+    public function getPath(): Path
     {
         return $this->path;
     }

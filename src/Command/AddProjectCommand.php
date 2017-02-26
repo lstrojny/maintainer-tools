@@ -20,7 +20,7 @@ class AddProjectCommand extends Command
         $this->projectsRepository = $projectsRepository;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this
             ->setName('projects:add')
@@ -28,7 +28,7 @@ class AddProjectCommand extends Command
             ->addArgument('path', InputArgument::REQUIRED);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $project = Project::create(Path::createFromRelativePath($input->getArgument('path')));
 

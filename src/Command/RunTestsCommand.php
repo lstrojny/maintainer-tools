@@ -1,7 +1,6 @@
 <?php
 namespace lstrojny\Maintenance\Command;
 
-use function Functional\const_function;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -11,6 +10,8 @@ use Symfony\Component\Process\ProcessBuilder;
 
 class RunTestsCommand extends Command
 {
+    use FilterableProjectsCommandTrait;
+
     private $projectsRepository;
 
     public function __construct(ProjectsRepository $projectsRepository)
@@ -19,18 +20,20 @@ class RunTestsCommand extends Command
         $this->projectsRepository = $projectsRepository;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this
             ->setName('run:tests')
             ->setDescription('Run tests');
+
+        $this->configureFilterOptions();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
-        foreach ($this->projectsRepository->matching(const_function(true)) as $project) {
+        foreach ($this->projectsRepository->matching(self::createProjectMatcher($input)) as $project) {
             if ($project->hasTests()) {
 
                 $io->title(sprintf('Running tests in %s', $project->getName()));

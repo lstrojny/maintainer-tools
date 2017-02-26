@@ -1,7 +1,6 @@
 <?php
 namespace lstrojny\Maintenance\Command;
 
-use function Functional\const_function;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -9,10 +8,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 
 class RunComposerCommand extends Command
 {
+    use FilterableProjectsCommandTrait;
+
     private $projectsRepository;
 
     public function __construct(ProjectsRepository $projectsRepository)
@@ -21,21 +21,23 @@ class RunComposerCommand extends Command
         $this->projectsRepository = $projectsRepository;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this
             ->setName('composer:run')
             ->setDescription('Run composer command')
             ->addArgument('composer-command', InputArgument::REQUIRED);
+
+        $this->configureFilterOptions();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
         $command = $input->getArgument('composer-command');
 
-        foreach ($this->projectsRepository->matching(const_function(true)) as $project) {
+        foreach ($this->projectsRepository->matching(self::createProjectMatcher($input)) as $project) {
             if ($project->usesComposer()) {
 
                 $io->title(sprintf('Running composer %s in %s', $command, $project->getName()));

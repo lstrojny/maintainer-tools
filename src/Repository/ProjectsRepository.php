@@ -1,7 +1,6 @@
 <?php
 namespace lstrojny\Maintenance\Repository;
 
-use function Functional\const_function;
 use function Functional\filter;
 use lstrojny\Maintenance\Value\Path;
 use lstrojny\Maintenance\Value\Project;
@@ -31,7 +30,7 @@ class ProjectsRepository
         return filter($this->projects, $predicate);
     }
 
-    public function add(Project $newProject) : void
+    public function add(Project $newProject): void
     {
         foreach ($this->projects as $project) {
             if ($project->compare($newProject) === 0) {

@@ -1,9 +1,7 @@
 <?php
 namespace lstrojny\Maintenance\Command;
 
-use function Functional\const_function;
 use GuzzleHttp\Client;
-use function GuzzleHttp\Promise\unwrap;
 use GuzzleHttp\Psr7\Response;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
 use lstrojny\Maintenance\Value\StatusEmojis;
@@ -11,9 +9,12 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use function GuzzleHttp\Promise\unwrap;
 
 class ProjectsInformationCommand extends Command
 {
+    use FilterableProjectsCommandTrait;
+
     private $projectsRepository;
 
     public function __construct(ProjectsRepository $projectsRepository)
@@ -22,24 +23,25 @@ class ProjectsInformationCommand extends Command
         $this->projectsRepository = $projectsRepository;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this
             ->setName('projects:info')
             ->setDescription('Show projects information')
             ->addOption('quick');
+
+        $this->configureFilterOptions();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
         $rows = [];
-
         $http = new Client();
 
         $requests = [];
-        foreach ($this->projectsRepository->matching(const_function(true)) as $project) {
+        foreach ($this->projectsRepository->matching(self::createProjectMatcher($input)) as $project) {
             $requests[$project->getName()] = $http->getAsync(
                 'https://api.travis-ci.org/repos/' . $project->getGitHubRepositoryName()
             );
@@ -48,9 +50,9 @@ class ProjectsInformationCommand extends Command
         /** @var Response[] $response */
         $responses = unwrap($requests);
 
-        $io->progressStart(count($this->projectsRepository->matching(const_function(true))));
+        $io->progressStart(count($this->projectsRepository->matching(self::createProjectMatcher($input))));
 
-        foreach ($this->projectsRepository->matching(const_function(true)) as $project) {
+        foreach ($this->projectsRepository->matching(self::createProjectMatcher($input)) as $project) {
 
             $io->progressAdvance();
 
@@ -86,7 +88,7 @@ class ProjectsInformationCommand extends Command
                 $releaseStatus . '   ' . $project->getLatestVersion(),
                 ($project->hasLocalChanges() ? StatusEmojis::PROGRESS : StatusEmojis::POSITIVE),
                 $project->usesComposer() ? $project->composer()->require->php : 'n.A.',
-                implode(' ', $project->travis()->php->get()),
+                implode(' ', $project->getTravisVersions()),
                 $buildResult
             ];
         }

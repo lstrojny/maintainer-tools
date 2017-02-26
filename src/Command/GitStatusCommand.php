@@ -1,9 +1,6 @@
 <?php
 namespace lstrojny\Maintenance\Command;
 
-use function array_unique;
-use function Functional\const_function;
-use function Functional\map;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,6 +10,8 @@ use Symfony\Component\Process\ProcessBuilder;
 
 class GitStatusCommand extends Command
 {
+    use FilterableProjectsCommandTrait;
+
     private $projectsRepository;
 
     public function __construct(ProjectsRepository $projectsRepository)
@@ -21,20 +20,20 @@ class GitStatusCommand extends Command
         $this->projectsRepository = $projectsRepository;
     }
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this
             ->setName('git:status')
             ->setDescription('Run git status');
+
+        $this->configureFilterOptions();
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output) : int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
-        $packages = [];
-
-        foreach ($this->projectsRepository->matching(const_function(true)) as $project) {
+        foreach ($this->projectsRepository->matching(self::createProjectMatcher($input)) as $project) {
             $io->title(sprintf('Running git status in %s', $project->getName()));
 
             $process = ProcessBuilder::create(['git', 'status'])
