@@ -1,9 +1,9 @@
 <?php
 namespace lstrojny\Maintenance\Value;
 
-use const DIRECTORY_SEPARATOR;
 use InvalidArgumentException;
 use Symfony\Component\Filesystem\Filesystem;
+use const DIRECTORY_SEPARATOR;
 
 class Path
 {

@@ -1,11 +1,6 @@
 <?php
 namespace lstrojny\Maintenance\Value;
 
-use function Functional\first;
-use function Functional\pluck;
-use function Functional\partial_any;
-use function Functional\compare_on;
-use function Functional\sort;
 use InvalidArgumentException;
 use Naneau\SemVer\Parser;
 use Naneau\SemVer\Sort;
@@ -14,6 +9,10 @@ use RuntimeException;
 use Symfony\Component\Process\ProcessBuilder;
 use Symfony\Component\Yaml\Yaml;
 use const Functional\…;
+use function Functional\compare_on;
+use function Functional\first;
+use function Functional\partial_any;
+use function Functional\pluck;
 
 class Project
 {

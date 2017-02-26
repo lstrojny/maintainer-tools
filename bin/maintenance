@@ -10,7 +10,7 @@ use lstrojny\Maintenance\Command\ListReleasesCommand;
 use lstrojny\Maintenance\Command\ProjectsInformationCommand;
 use lstrojny\Maintenance\Command\RunComposerCommand;
 use lstrojny\Maintenance\Command\RunTestsCommand;
-use lstrojny\Maintenance\Command\ShowComposerVersionsCommand;
+use lstrojny\Maintenance\Command\ComposerDependencyVersionsCommand;
 use lstrojny\Maintenance\Repository\ProjectsRepository;
 use Symfony\Component\Console\Application;
 
@@ -25,7 +25,7 @@ $application->add(new ProjectsInformationCommand($projectsRepository));
 $application->add(new RunTestsCommand($projectsRepository));
 
 $application->add(new RunComposerCommand($projectsRepository));
-$application->add(new ShowComposerVersionsCommand($projectsRepository));
+$application->add(new ComposerDependencyVersionsCommand($projectsRepository));
 
 $application->add(new GitStatusCommand($projectsRepository));
 $application->add(new GitCheckoutCommand($projectsRepository));

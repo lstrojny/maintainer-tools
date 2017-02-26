@@ -1,9 +1,9 @@
 <?php
 namespace lstrojny\Maintenance\Repository;
 
-use function Functional\filter;
 use lstrojny\Maintenance\Value\Path;
 use lstrojny\Maintenance\Value\Project;
+use function Functional\filter;
 
 class ProjectsRepository
 {

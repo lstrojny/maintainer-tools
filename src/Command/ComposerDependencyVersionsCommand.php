@@ -8,8 +8,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use function array_unique;
 use function Functional\map;
+use function implode;
 
-class ShowComposerVersionsCommand extends Command
+class ComposerDependencyVersionsCommand extends Command
 {
     use FilterableProjectsCommandTrait;
 
@@ -60,7 +61,7 @@ class ShowComposerVersionsCommand extends Command
                 function (array $versions, $package) {
                     return [
                         $package,
-                        count(array_unique($versions)),
+                        count(array_unique($versions)) . "\n" . implode("\n", array_unique($versions)),
                         implode(
                             "\n",
                             map(
