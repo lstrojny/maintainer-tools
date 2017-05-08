@@ -63,10 +63,9 @@ class ProjectsInformationCommand extends Command
             if (!$result) {
                 $buildResult = ' - ';
             } else {
-
                 if ($result['last_build_result'] === 0) {
                     $status = StatusEmojis::POSITIVE;
-                } elseif ($result['last_build_result'] === null) {
+                } elseif ($result['last_build_result'] === null && !isset($result['last_build_finished_at'])) {
                     $status = StatusEmojis::PROGRESS;
                 } else {
                     $status = StatusEmojis::NEGATIVE;
